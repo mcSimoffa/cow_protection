@@ -1,11 +1,3 @@
-/* BSD Socket API Example
-
-   This example code is in the Public Domain (or CC0 licensed, at your option.)
-
-   Unless required by applicable law or agreed to in writing, this
-   software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
-   CONDITIONS OF ANY KIND, either express or implied.
-*/
 #include <string.h>
 #include <sys/param.h>
 #include "freertos/FreeRTOS.h"
@@ -17,15 +9,22 @@
 #include "esp_log.h"
 #include "nvs_flash.h"
 #include "esp_netif.h"
-#include "protocol_examples_common.h"
-#include "addr_from_stdin.h"
+//#include "protocol_examples_common.h"
+//#include "addr_from_stdin.h"
 #include "lwip/err.h"
 #include "lwip/sockets.h"
+
+#include "backup.h"
+#include "wifi_connect.h"
+#include "console.h"
 
 //-----------------------------------------------------------------
 #define HOST_IP_ADDR CONFIG_EXAMPLE_IPV4_ADDR
 #define PORT CONFIG_EXAMPLE_PORT
+#define PARAMETERS_IN_RAM_QTT	32
 
+#define WIFI_TIMEOUT_MS				CONFIG_WIFI_TIMEOUT_CONN
+#define WIFI_TIMEOUT_TICK			(WIFI_TIMEOUT_MS/portTICK_PERIOD_MS)
 //-----------------------------------------------------------------
 static const char *TAG = "example";
 static const char *payload = "Message from ESP32 ";
@@ -121,15 +120,24 @@ static void tcp_client_task(void *pvParameters)
 //-----------------------------------------------------------------
 void app_main(void)
 {
-	ESP_ERROR_CHECK(nvs_flash_init());
+	initialize_nvs();
+	nvs_open_storage();
 	ESP_ERROR_CHECK(esp_netif_init());
 	ESP_ERROR_CHECK(esp_event_loop_create_default());
 
-	/* This helper function configures Wi-Fi or Ethernet, as selected in menuconfig.
-	 * Read "Establishing Wi-Fi or Ethernet Connection" section in
-	 * examples/protocols/README.md for more information about this function.
-	 */
-	ESP_ERROR_CHECK(example_connect());
+	xTaskCreate(consoleProcessor_task, "console", 4096, NULL, 2, NULL);
 
+	// wifi connect
+	retreive_priority_table();
+	if (wifi_connect () == ESP_ERR_TIMEOUT)
+	{
+		 do
+			 ESP_LOGW(TAG, "%s: WiFi connection failed", __func__);
+		 while (!get_wifi_state(WIFI_TIMEOUT_TICK));
+	}
+	saveNVS_priority_table();
+
+	// TCP socket
 	xTaskCreate(tcp_client_task, "tcp_client", 4096, NULL, 5, NULL);
+
 }

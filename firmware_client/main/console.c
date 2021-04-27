@@ -13,6 +13,7 @@
 #include "nvs_flash.h"
 
 #include "wifi_connect.h"
+#include "tcp_sc.h"
 #include "console.h"
 
 static const char* TAG = "CONSOLE";
@@ -65,6 +66,27 @@ static void register_free(void)
 			.help = "Get the current size of free heap memory",
 			.hint = NULL,
 			.func = &free_mem,
+	};
+	ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
+}
+
+//-----------------------------------------------------------------------------------------------
+static int test_send(int argc, char **argv)
+{
+	static const char tst_str[]="Test string from ESP32 client";
+	msg_send_socket((char*)tst_str, sizeof(tst_str)-1);
+	return 0;
+}
+
+//------------------------------
+static void register_test_send(void)
+{
+	const esp_console_cmd_t cmd =
+	{
+			.command = "send",
+			.help = "Send test string by TCP socket to server",
+			.hint = NULL,
+			.func = &test_send,
 	};
 	ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
 }
@@ -177,6 +199,8 @@ void consoleProcessor_task(void *pvParameters)
     esp_console_register_help_command();
     register_free();
     register_wifi();
+    register_test_send();
+
 
     // Prompt to be printed before each line. This can be customized, made dynamic, etc.
     const char* prompt = LOG_COLOR(LOG_COLOR_BLUE) "stuff-bm> " LOG_RESET_COLOR;

@@ -159,7 +159,7 @@ l_try_connect:
 esp_err_t wifi_connect()
 {
 	static esp_netif_t*  def_wifista = NULL;
-	esp_log_level_set("WiFiCONN", ESP_LOG_WARN);
+	esp_log_level_set("wifi", ESP_LOG_WARN);
 	if (def_wifista != NULL)
 		return (ESP_ERR_INVALID_STATE);
 

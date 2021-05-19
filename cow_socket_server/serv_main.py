@@ -14,7 +14,7 @@ while inputs:
             connection, client_address = s.accept()
             connection.setblocking(0)
             inputs.append(connection)
-            print('\nsuccess client connected')
+            print('\n', s.getsockname(), ' success connected top client')
         else:
             data = s.recv(1024)
             if data:
@@ -23,7 +23,7 @@ while inputs:
                 else:
                     message_queues[s]=[data]
                          
-                print('data receive_ ',data)
+                print('data receive_ ',data, ' from ', (s.getpeername())[0])
                 if s not in outputs:
                     outputs.append(s)
             else:
@@ -35,7 +35,7 @@ while inputs:
                 del message_queues[s]
 
     for s in writable:
-        print('writable',s)
+        print('writable')
         next_msg = message_queues.get(s, None)
         if len(next_msg):
             temp=next_msg.pop(0).decode('utf-8').upper()
